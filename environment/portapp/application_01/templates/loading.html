@@ -1,0 +1,484 @@
+{% load static %}
+{% load mathfilters %}
+{% if user.is_authenticated %}
+
+<!DOCTYPE html>
+<html style="overflow-x: hidden;">
+
+    <head>
+        <title>RETURN</title>
+        <link rel="icon" href="{% static 'img/ship-solid.svg' %}" />
+        <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet" type="text/css"/>
+        <script src="{% static 'scripts/bootstrap.bundle.min.js' %}" type="text/javascript"></script>
+        <link rel="stylesheet" href="{% static 'bticons/bootstrap-icons.css' %}">
+        <!--<<script src="{% static 'jquery/jquery-3.6.1.min.js' %}" type="text/javascript"></script>-->
+    </head>
+
+    <script>
+        
+        if(window.history.replaceState) {
+            window.history.replaceState( null, null, window.location.href );
+        
+        }
+
+        function show_truck(rowid){
+
+                try {
+                    document.getElementById("notification").style.display = "none";
+                } catch (error) {
+                    console.error(error);
+                }
+
+
+                document.getElementById("search_form").style.display = "none";
+                document.getElementById("line").style.display = "none";
+
+                document.getElementById("general_form").style.display = "block";
+                document.getElementById("report_table").style.display = "none";
+
+                document.getElementById("loading_number").value = document.getElementById("td0"+rowid).innerHTML;
+                document.getElementById("rollback_loading").value = document.getElementById("td0"+rowid).innerHTML;
+                document.getElementById("plan").value = document.getElementById("td1"+rowid).innerHTML;
+                document.getElementById("order_number").value = document.getElementById("td2"+rowid).innerHTML;
+                document.getElementById("vessel_name").value = document.getElementById("td3"+rowid).innerHTML;
+                document.getElementById("loadid").value = document.getElementById("td4"+rowid).innerHTML;
+                document.getElementById("tfweight").value = document.getElementById("td5"+rowid).innerHTML;
+                document.getElementById("tsweight").value = document.getElementById("td6"+rowid).innerHTML;
+                document.getElementById("tswdatetime").value = document.getElementById("td7"+rowid).innerHTML.substr(0, 10)+ "T" +document.getElementById("td7"+rowid).innerHTML.substr(11);
+                document.getElementById("item").value = document.getElementById("td8"+rowid).innerHTML;
+                document.getElementById("unlport").value = document.getElementById("td9"+rowid).innerHTML;
+                document.getElementById("pfweight").value = document.getElementById("td10"+rowid).innerHTML;
+                document.getElementById("pfwdatetime").value = document.getElementById("td11"+rowid).innerHTML.substr(0, 10)+ "T" +document.getElementById("td11"+rowid).innerHTML.substr(11);
+
+                document.getElementById("btnupdate").style.display = "block";
+                document.getElementById("btnsave").style.display = "none";
+
+        }
+
+        function quantityLen(id){
+
+            var value = parseInt(document.getElementById(id).value);        
+
+            if(value > 99){
+                document.getElementById(id).value = "";
+            }
+        }
+
+
+        function diaLenFormat(id){    
+
+            var value = document.getElementById(id).value;
+
+            if(value.length > 5){
+                document.getElementById(id).value = "";
+            }
+
+            if (id != 'weight' ){ 
+                
+                if(value.length > 2 && !value.includes('.')){
+                    document.getElementById(id).value = "";
+                }
+            }
+        }
+
+    </script>
+
+    <body class="d-flex flex-column min-vh-100" 
+        {% if show %} onload="javascript:document.getElementById('popup').click();" {% endif %} style="overflow-x: hidden; background-color: #F2F5FA; overflow-y: hidden;" id="body">
+
+
+        <!--POP_UP_MESSAGE-->
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#messageModal" id="popup" hidden>
+            Launch demo modal
+        </button>
+
+        <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Message</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {{message}}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+                </div>
+             </div>
+        </div>
+        <!--POP_UP_MESSAGE-->
+
+         <!--POP_UP_CONFIRM-->
+         <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Confirm</h5>
+                </div>
+                <div class="modal-body">
+                    Do You Want To Rollback This Truck?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">NO</button>
+                    <form method="POST">
+                        {% csrf_token %}
+                        <button type="submit" name="confirmed" class="btn btn-primary" data-bs-dismiss="modal">YES</button>
+                        <input type="text" id="rollback_loading" name="rollback_loading" hidden/>
+                    </form>
+                </div>
+                </div>
+             </div>
+        </div>
+        <!--POP_UP_CONFIRM-->
+
+        <div class="row" style="background-color: white; box-shadow: 3px 3px 5px 6px rgb(167, 164, 164);">
+            
+            <div class="col-3 p-3"><img src="{% static 'img/tos.png' %}" class="img-fluid" alt="..."></div>
+
+            <div class="col-7 p-2" style="background-color: #0d6efd; color: white; font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;">
+                <div class="row p-2"></div>
+                <div class="row">
+                    
+                    
+                    <div class="col-4"><button onclick="location.href='{% url 'FWEIGHT' %}'" class="btn btn-light" style="font-size: 20px;"><i class="bi bi-arrow-left-circle-fill"></i> previous step</button></div>
+                    
+                    <div class="col-4 d-flex justify-content-center"><h2>LOADING</h2></div>
+                    {% if request.session.user_type == "COMEX" or request.session.user_type == "SUPER_COMEX" %}
+                    <div class="col-4 d-flex justify-content-end"><button onclick="location.href='{% url 'SWEIGHT' %}'" class="btn btn-light" style="font-size: 20px;"><i class="bi bi-arrow-right-circle-fill"></i> next step</button></div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="col-2 p-3" style="text-align: right;"><button class="btn btn-info" style="font-size: 20px;" onclick="location.href='{% url 'LOGOUT' %}'"><span style="font-size: 20px;">LOGOUT </span><i class="bi bi-power"></i></button></div>
+            
+        </div>
+
+
+        <div class="row" style="text-align: center;">
+        
+            <div class="col-2 p-4" style="background-color: rgba(30, 25, 48, 0.664); color: white;">
+                
+                <img src="{% static 'img/ship-solid.svg' %}" class="img-fluid" width="50">
+                <h5 style="color: yellow;">{{request.session.ship}}</h5>
+                <hr class="my-3">
+                <a id="dashboard" href="{% url 'HOME' %}" style="text-decoration: none; color: white; font-size: 20px;">
+                    <button class="btn btn-primary">Dashboard <i class="bi bi-grid-3x2-gap"></i></button>
+                </a>
+                <hr class="my-3">
+                <a id="dashboard" href="{% url 'SHIPS' %}" style="text-decoration: none; color: white; font-size: 20px;">
+                    <button class="btn btn-light">SHIP SELECTION <i class="bi bi-symmetry-vertical"></i></button>
+                </a>
+            </div>
+
+            <div class="col-10 p-3" >
+
+                <div class="row"><div class="col-10 p-1"></div></div>
+
+                <div class="row" style="background-color: white;">
+
+                    <div class="row" id="search_form">
+                        
+                        {% if not newre %}
+                        <form method="POST">
+                            {% csrf_token %}
+
+                            <div class="row" style="text-align: left;">
+
+                                <div class="col-3" >
+                                    <div class="mb-3">
+                                        <label class="form-label">From:</label>
+                                        <input type="datetime-local" class="form-control" id="datetime" name="from_date">
+                                    </div>
+                                </div>
+
+                                <div class="col-3">
+                                    <div class="mb-3">
+                                        <label class="form-label">To:</label>
+                                        <input type="datetime-local" class="form-control" id="datetime" name="to_date">
+                                    </div>
+                                </div>
+
+                                <div class="col-2">
+                                    <div class="mb-3">
+                                        <label class="form-label">Loading:</label>
+                                        <input type="text" class="form-control"  name="loading_search" maxlength="11" placeholder="Order number">
+                                    </div>
+                                </div>
+
+                                <div class="col-2">
+                                    <div class="mb-3">
+                                        <label class="form-label">Vessel name:</label>
+                                        <input type="text" class="form-control" id="vname" name="vessel_search" maxlength="50" placeholder="Vessel name">
+                                    </div>
+                                </div>
+
+                                <div class="col-2" style="text-align: right;">
+                                    <div class="row"><div class="col p-3"></div></div>
+                                    <div class="col-3" style="text-align: right;">
+                                        <button name="btnsearch" type="submit" class="btn btn-primary" style="font-size: 16px;"><i class="bi bi-search"></i></button>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </form>
+                        {% endif %}
+
+                    </div>                    
+
+                    {% if not newre %}
+                    <!--{% if not hide_not %}
+                        <div class="row" id="notification">
+                            <div class="col" style="text-align: left;  font-size: 18px;">
+                                <i class="bi bi-info-circle-fill" style="color: red;"></i> You are viewing data of the last 24 hours.</h3>
+                            </div>
+                        </div>
+                    {% endif %}-->
+                    {% endif %}
+
+                    {% if not newre %}
+                        <hr class="my-3" id="line">
+                    {% endif %}
+
+                    {% if not newre %} 
+                    <!--RAPPORT-->
+                    <div class="row" id="report_table">
+                        <div style="overflow-y: scroll; height: 800px;" class="col-12">
+                            <table class="table">
+                                <thead style="background-color: #49D2F4; position: sticky; top: 0; z-index: 1">
+                                    <th>Loading number</th>
+                                    <th>Plate number</th>
+                                    <th>Order number</th>
+                                    <th>Vessel name</th>
+                                    <th>Loading port</th>
+                                    <th hidden>tosyali first wieght</th>
+                                    <th hidden>tosyali second wieght</th>
+                                    <th hidden>datetime tosyali second wieght </th>
+                                    <th hidden>item</th>
+                                    <th hidden>Unloading port</th>
+                                    <th hidden>Port first weight</th>
+                                    <th hidden>datetime port first weight</th>
+                                    
+                                    
+                                </thead>
+                                <tbody>
+                                    {% for truck in trucks %}
+                                        <tr onclick="show_truck('{{truck.0}}')" {% if forloop.counter|mod:2 == 0 %}style="background-color: rgb(228, 227, 227)"{% endif %}>
+                                            <td id="td0{{truck.0}}">{{truck.0}}</td>
+                                            <td id="td1{{truck.0}}">{{truck.1}}</td>
+                                            <td id="td2{{truck.0}}">{{truck.7}}</td>
+                                            <td id="td3{{truck.0}}">{{truck.4}}</td>
+                                            <td id="td4{{truck.0}}">{{truck.5}}</td>
+                                            <td id="td5{{truck.0}}" hidden>{{truck.2}}</td>
+                                            <td id="td6{{truck.0}}" hidden>{{truck.3}}</td>
+                                            <td id="td7{{truck.0}}" hidden>{{truck.9|safe}}</td>
+                                            <td id="td8{{truck.0}}" hidden>{{truck.8}}</td>
+                                            <td id="td9{{truck.0}}" hidden>{{truck.6}}</td>
+                                            <td id="td10{{truck.0}}" hidden>{{truck.10}}</td>
+                                            <td id="td11{{truck.0}}" hidden>{{truck.11|safe}}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!--RAPPORT-->
+                    
+
+                    <div class="row" style="display: none;" id="general_form">
+                        
+                        <div class="row">
+                            <div class="col-4" style="background-color: rgb(164, 164, 170); text-align: left;""><button class="btn btn-warning" onclick="location.href='{% url 'LOADING' %}'">Back</button></div>
+                            <div class="col-8" style="background-color: rgb(164, 164, 170); color: white; text-align: right;">{% if rollback %}<button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmModal">RollBack</button>{% endif %}</div>
+                        </div>
+
+                        <div style="overflow-y: scroll; height: 800px;" class="col-12">
+
+                            <form method="POST">
+
+                                {% csrf_token %}
+
+                                <div class="row">
+                                    
+                                    <div class="col-4" style="text-align: left; font-size: 18px;">
+                                        
+                                        <div class="row"><div class="col p-2"></div></div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Loading number:</label>
+                                            <input autocomplete="off" id="loading_number" maxlength="11" type="text" class="form-control" placeholder="Loading number" name="loading_number" list="programmingLanguages" readonly >
+                                            <!--<button name="search" class="btn btn-dark" type="button" id="button-addon2">Search</button>-->
+                                            <datalist id="programmingLanguages">
+                                                {% for ln in loadings %}
+                                                    <option value="{{ln.0}}">{{ln.0}}</option>
+                                                {% endfor %}
+                                            </datalist>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Plate number:</label>
+                                            <input autocomplete="off" id="plan" type="text" class="form-control"  name="plate_number" maxlength="15" placeholder="Plate number" readonly>
+                                        </div>
+
+                                        <div class="mb-0">
+                                            <label class="form-label">Tosyali First Weight:</label>
+                                        </div>
+                                        <div class="input-group mb-3">
+                                            <input id="tfweight"  onkeyup="diaLenFormat('weight')" name="tfweight" type="number" class="form-control"  aria-label="Recipient's username" aria-describedby="basic-addon2" readonly>
+                                            <span class="input-group-text" id="basic-addon2">Kg</span>
+                                        </div>   
+                                        
+                                        <div class="mb-0">
+                                            <label class="form-label">Port First Weight:</label>
+                                        </div>
+                                        <div class="input-group mb-3">
+                                            <input id="pfweight"  onkeyup="diaLenFormat('weight')" name="pfweight" type="number" class="form-control"  aria-label="Recipient's username" aria-describedby="basic-addon2" readonly>
+                                            <span class="input-group-text" id="basic-addon2">Kg</span>
+                                        </div>  
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Date (Port first weight):</label>
+                                            <input type="datetime-local" class="form-control" id="pfwdatetime" name="pfwdatetime" readonly>
+                                        </div>
+
+                                    </div>
+
+
+                                    <div class="col-4" style="text-align: left; font-size: 18px;">
+                                        
+                                        <div class="row"><div class="col p-2"></div></div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Vessel name:</label>
+                                            <input autocomplete="off" id="vessel_name" type="text" class="form-control"  name="vessel_name" maxlength="30"  readonly>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Order number:</label>
+                                            <input autocomplete="off" id="order_number" type="text" class="form-control"  name="order_number" maxlength="10" readonly>
+                                        </div>
+
+                                        <div class="mb-0">
+                                            <label class="form-label">Tosyali Second Weight:</label>
+                                        </div>
+                                        <div class="input-group mb-3">
+                                            <input id="tsweight"  onkeyup="diaLenFormat('weight')" name="tsweight" type="number" class="form-control" aria-label="Recipient's username" aria-describedby="basic-addon2" readonly>
+                                            <span class="input-group-text" id="basic-addon2">Kg</span>
+                                        </div> 
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Date (Tosyali second weight):</label>
+                                            <input type="datetime-local" class="form-control" id="tswdatetime" name="tswdatetime" readonly>
+                                        </div>
+
+                                    </div>
+
+
+                                    <div class="col-4" style="text-align: left; font-size: 18px;">
+                                        
+                                        <div class="row"><div class="col p-2"></div></div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Loading port:</label>
+                                            <input autocomplete="off" id="loadid" type="text" class="form-control"  name="loading_port" maxlength="30" readonly>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Unlooading port:</label>
+                                            <input autocomplete="off" id="unlport" type="text" class="form-control"  name="unloading_port" maxlength="30" placeholder="Unloading port" readonly>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Item:</label>
+                                            <input autocomplete="off" id="item" type="text" class="form-control"  name="item" maxlength="10" readonly>
+                                        </div>
+
+
+                                        <div class="mb-3" style="display: none;">
+                                            <input id="product" type="text" class="form-control"  name="product" maxlength="10">
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div class="row">
+
+                                    <div class="col-6"></div>
+                                    <div class="col-6" style="text-align: left; font-size: 22px;">
+
+                                        <div class="row">
+                                            
+                                        </div>
+
+                                        <div class="row">
+
+                                            <div class="col-2" style="text-align: left;">
+                                            
+                                            </div>
+
+                                            <div class="col-5" style="text-align: right;">
+                                                
+                                            </div>
+
+                                            <div class="col-5" style="text-align: right; display: none;" id="btnupdate">
+                                                <button type="button" class="btn btn-success" style="font-size: 20px;" data-bs-toggle="modal" data-bs-target="#ConfirmSave">VALIDATE <i class="bi bi-device-ssd-fill"></i></button>
+                                            </div>
+
+                                        </div>
+                                        
+                                    </div>
+
+                                </div>
+
+                                <div class="row"><div class="col p-5"></div></div>
+                                
+                                <div class="modal fade" id="ConfirmSave" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="exampleModalLabel">Confirm</h5>
+                                        </div>
+                                        <div class="modal-body">
+                                            Do you want to validate this truck?
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-success" data-bs-dismiss="modal">NO</button>
+                                            <button type="submit" name="btnsave" class="btn btn-primary" data-bs-dismiss="modal">YES</button>
+                                        </div>
+                                        </div>
+                                     </div>
+                                </div>
+
+                            </form>
+                       
+                        </div>
+
+                    </div>
+
+                    {% endif %}
+
+
+                    <div class="row"><div class="col p-3"></div></div>
+                </div>ssssssds
+                
+            </div>
+
+            <footer class="bg-light text-center text-lg-start">
+                <!-- Copyright -->
+                <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.2); height: 500px; font-size: 25px;">
+                  ------ Tosyali Algérie Fer & Acier ------<br> Bethioua, Oran, Algeria <br>2022
+                </div>
+                <!-- Copyright -->
+            </footer>
+
+        </div>
+
+        
+    </body>
+
+</html>
+{% endif %}
