@@ -86,11 +86,11 @@ DATABASES = {
     
     'default': {
         'ENGINE': 'mssql',
-        'NAME': 'PORTPROCESS',
-        'USER': 'sa',
-        'PASSWORD': 'Tos2014hiba',
-        'HOST': '10.92.1.18\MSSQLSERVERI03',
-        #'HOST': '10.92.1.9',
+        'NAME': '',
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '1',
+        #'HOST': '',
         'PORT': '',
         "OPTIONS": {"driver": "ODBC Driver 17 for SQL Server", 
         },
